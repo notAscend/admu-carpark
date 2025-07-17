@@ -1,0 +1,130 @@
+{% extends 'parking_app/base.html' %}
+{% block title %}Parking Suggestions{% endblock %}
+{% block content %}
+    <h2>Nearest Parking Suggestions</h2>
+    <p>Your current location: ({{ user_lat }}, {{ user_lon }})</p>
+    <p>Selected Car: <strong>{{ selected_car.plate_number }}</strong></p>
+
+    <div id="map" class="parking-map"></div>
+
+    <ul class="parking-list" id="parking-list">
+        {% for data in parking_data %}
+            <li class="parking-item" id="zone-{{ data.zone.id }}">
+                <div>
+                    <h3>{{ data.name }}</h3>
+                    <p>Distance: {{ data.distance|floatformat:"0" }} meters</p>
+                    <p>Available Slots: <span class="available-slots">{{ data.current_available_slots }}</span> / {{ data.total_slots }}</p>
+                    <div class="availability-bar">
+                        <div class="availability-fill" style="width: {{ data.occupancy_percentage }}%" data-occupancy-grade="
+                            {% if data.occupancy_percentage <= 50 %}low
+                            {% elif data.occupancy_percentage <= 80 %}medium
+                            {% else %}high
+                            {% endif %}">
+                        </div>
+                    </div>
+                </div>
+                {% if data.current_available_slots > 0 %}
+                    <a href="{% url 'start_parking_session' data.zone.id selected_car.id %}" class="btn">Park Here</a>
+                {% else %}
+                    <button class="btn btn-danger" disabled>Full</button>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        const parkingData = JSON.parse('{{ zones_json|safe }}');
+
+        function initMap() {
+            const map = new google.maps.Map(document.getElementById("map"), {
+                // ...
+            });
+
+            parkingData.forEach(zone => {
+                const marker = new google.maps.Marker({
+                    position: { lat: zone.latitude, lng: zone.longitude },
+                    map,
+                    title: zone.name, // This 'name' now correctly refers to zone.area from the view
+                    label: {
+                        text: String(zone.current_available_slots),
+                        color: 'white',
+                        fontSize: '12px',
+                        fontWeight: 'bold'
+                    },
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 12,
+                        fillColor: zone.is_full ? '#dc3545' : '#28a745',
+                        fillOpacity: 0.8,
+                        strokeWeight: 0
+                    }
+                });
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `
+                        <div>
+                            <h5>${zone.name}</h5> <p>Available: ${zone.current_available_slots} / ${zone.total_capacity}</p> <p>Status: ${zone.is_full ? 'Full' : 'Available'}</p>
+                        </div>
+                    `
+                });
+
+                marker.addListener('click', () => {
+                    infoWindow.open(map, marker);
+                });
+            });
+        }
+    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ MAPS_API_KEY }}&callback=initMap"></script>
+
+    <script>
+        // WebSocket for real-time updates
+        const parkingSocket = new WebSocket(
+            'ws://' + window.location.host + '/ws/parking_updates/'
+        );
+
+        parkingSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'parking_zone_update') {
+                const zoneData = data.data;
+                const zoneElement = document.getElementById(`zone-${zoneData.id}`);
+                if (zoneElement) {
+                    zoneElement.querySelector('.available-slots').innerText = zoneData.current_available_slots;
+                    const occupancyPercentage = (zoneData.total_slots - zoneData.current_available_slots) / zoneData.total_slots * 100;
+
+                    const fillElement = zoneElement.querySelector('.availability-fill');
+                    fillElement.style.width = `${occupancyPercentage}%`;
+
+                    let grade = 'low';
+                    if (occupancyPercentage > 50 && occupancyPercentage <= 80) {
+                        grade = 'medium';
+                    } else if (occupancyPercentage > 80) {
+                        grade = 'high';
+                    }
+                    fillElement.setAttribute('data-occupancy-grade', grade);
+
+                    // Update the "Park Here" button state
+                    const parkButton = zoneElement.querySelector('.btn');
+                    if (zoneData.current_available_slots <= 0) {
+                        if (parkButton) {
+                            parkButton.classList.add('btn-danger');
+                            parkButton.innerText = 'Full';
+                            parkButton.disabled = true;
+                        }
+                    } else {
+                        if (parkButton) {
+                            parkButton.classList.remove('btn-danger');
+                            parkButton.innerText = 'Park Here';
+                            parkButton.disabled = false;
+                        }
+                    }
+                }
+            }
+        };
+
+        parkingSocket.onclose = function(e) {
+            console.error('Parking socket closed unexpectedly');
+        };
+    </script>
+{% endblock %}

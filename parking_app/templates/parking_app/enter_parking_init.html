@@ -1,0 +1,366 @@
+{% extends 'parking_app/base.html' %}
+{% load static %}
+
+{% block title %}Enter Parking System{% endblock %}
+
+{% block content %}
+<div class="container m-5">
+    <h1 class="text-center mb-4">Enter Parking System</h1>
+
+    <style>
+        .parking-zone-button {
+            display: block; /* Makes it take full width */
+            width: 100%; /* Ensures it fills its column */
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            text-decoration: none; /* Remove underline for links */
+            color: #343a40; /* Default text color */
+        }
+        .parking-zone-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .parking-zone-button.available {
+            border-color: #28a745; /* Green border for available */
+            background-color: #e6ffe6; /* Light green background */
+        }
+        .parking-zone-button.full {
+            border-color: #dc3545; /* Red border for full */
+            background-color: #ffe6e6; /* Light red background */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .parking-zone-button.highlight-nearest {
+            border-color: #007bff !important; /* Blue border for nearest */
+            box-shadow: 0 0 15px rgba(0,123,255,0.5);
+            transform: scale(1.03);
+            background-color: #e0f2ff; /* Lighter blue background */
+        }
+        .parking-zone-button.is-selected {
+            border-color: #0056b3 !important; /* Darker blue when selected */
+            background-color: #cce0ff; /* Slightly darker blue */
+            box-shadow: 0 0 15px rgba(0,123,255,0.7);
+        }
+        .parking-zone-button h3 {
+            margin-bottom: 5px;
+            color: #007bff;
+        }
+        .parking-zone-button .slots-info {
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        .parking-zone-button .status-text {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .text-success { color: #28a745 !important; }
+        .text-danger { color: #dc3545 !important; }
+
+        .confirmation-modal {
+            position: fixed;
+            z-index: 1050;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black backdrop */
+            display: none; /* Hidden by default */
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        .modal-actions button {
+            width: 150px;
+        }
+        /* Simple icon styling for the button */
+        .bi-map-fill {
+            margin-right: 8px;
+        }
+
+    </style>
+
+    <p>Your current approximate location: <span id="user-location-display">Getting location...</span></p>
+    <p><strong>Closest Parking Zone with Slots:</strong> <span id="closest-available-zone">N/A</span></p>
+
+    <div class="row" id="parkingButtonsContainer">
+        <!-- Parking zone buttons will be dynamically added here by JavaScript -->
+        <div class="col-12 text-center" id="loadingMessage">
+            <p class="text-muted">Loading parking zone data...</p>
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="confirmation-modal" class="confirmation-modal">
+        <div class="modal-content">
+            <h2 class="modal-title">Confirm Parking Zone</h2>
+            <div id="modal-body-content">
+                <p>You have selected: <strong id="selected-zone-name"></strong></p>
+                <p>Available Slots: <strong id="selected-zone-slots"></strong></p>
+            </div>
+            
+            <div class="d-grid gap-2 my-3">
+                <a id="view-on-maps-btn" href="#" class="btn btn-outline-primary" target="_blank">
+                    <i class="bi bi-map-fill"></i> View on Google Maps
+                </a>
+            </div>
+
+            <div class="modal-actions mt-4">
+                <button type="button" class="btn btn-secondary me-2" id="cancel-confirm-btn">Cancel</button>
+                <button type="button" class="btn btn-success" id="proceed-confirm-btn">Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <form id="parkingForm" method="post" action="{% url 'start_parking_session' %}" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="user_lat" id="user_lat">
+        <input type="hidden" name="user_lon" id="user_lon">
+        <input type="hidden" name="selected_zone_id" id="selected_zone_id">
+        <input type="hidden" name="selected_car_id" id="selected_car_id">
+
+        <div class="form-group mt-3">
+            <label for="car_select">Select your Car:</label>
+            <select class="form-control" id="car_select" name="car_id" required>
+                <option value="">-- Select a Car --</option>
+                {% for car in user_cars %}
+                    <option value="{{ car.id }}">{{ car.plate_number }} ({{ car.car_type }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3" id="submitBtn" disabled>
+            Start Parking Session
+        </button>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Haversine formula to calculate distance between two lat/lon points
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Radius of Earth in metres
+      const φ1 = lat1 * Math.PI/180;
+      const φ2 = lat2 * Math.PI/180;
+      const Δφ = (lat2-lat1) * Math.PI/180;
+      const Δλ = (lon2-lon1) * Math.PI/180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+      const d = R * c; // Distance in metres
+      return d;
+    }
+
+    const parkingButtonsContainer = document.getElementById('parkingButtonsContainer');
+    const parkingForm = document.getElementById('parkingForm');
+    const userLocationDisplay = document.getElementById('user-location-display');
+    const closestAvailableZoneDisplay = document.getElementById('closest-available-zone');
+    const loadingMessage = document.getElementById('loadingMessage');
+    const carSelect = document.getElementById('car_select');
+    const submitBtn = document.getElementById('submitBtn'); // Added this for easier access
+    
+    // New Modal Elements
+    const confirmationModal = document.getElementById('confirmation-modal');
+    const selectedZoneName = document.getElementById('selected-zone-name');
+    const selectedZoneSlots = document.getElementById('selected-zone-slots');
+    const viewOnMapsBtn = document.getElementById('view-on-maps-btn');
+    const cancelConfirmBtn = document.getElementById('cancel-confirm-btn');
+    const proceedConfirmBtn = document.getElementById('proceed-confirm-btn');
+
+    let userCurrentLat = null;
+    let userCurrentLon = null;
+    let selectedZoneElement = null;
+    let parkingZoneData = [];
+    try {
+        parkingZoneData = JSON.parse('{{ zones_json|safe }}');
+    } catch (e) {
+        console.error("No parking zone data provided or JSON is invalid:", e);
+        parkingButtonsContainer.innerHTML = '<p class="text-danger">Error loading parking zone data. Please try again later.</p>';
+        loadingMessage.style.display = 'none';
+    }
+
+    function renderParkingZones() {
+        parkingButtonsContainer.innerHTML = '';
+        loadingMessage.style.display = 'none';
+
+        let nearestZoneId = null;
+        let minDistance = Infinity;
+        let closestAvailableZoneFound = false;
+
+        if (userCurrentLat !== null && userCurrentLon !== null) {
+            parkingZoneData.forEach(zone => {
+                const distance = getDistance(userCurrentLat, userCurrentLon, zone.latitude, zone.longitude);
+                zone.distance_to_user_m = distance;
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestZoneId = zone.id;
+                }
+            });
+            parkingZoneData.sort((a, b) => a.distance_to_user_m - b.distance_to_user_m);
+        }
+
+        if (parkingZoneData.length === 0) {
+            parkingButtonsContainer.innerHTML = '<p class="text-muted">No parking zones available.</p>';
+            return;
+        }
+
+        parkingZoneData.forEach(zone => {
+            const isNearest = (zone.id === nearestZoneId);
+            const available_slots = zone.total_slots - zone.curr_slots;
+            const isFull = available_slots <= 0;
+            
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-6 col-lg-4';
+
+            const button = document.createElement('div');
+            button.className = `parking-zone-button ${isFull ? 'full' : 'available'} ${isNearest ? 'highlight-nearest' : ''}`;
+            button.dataset.zoneId = zone.id;
+            button.dataset.zoneName = zone.name;
+            button.dataset.zoneLat = zone.latitude;
+            button.dataset.zoneLon = zone.longitude;
+            button.dataset.availableSlots = available_slots;
+
+            button.innerHTML = `
+                <h3>${zone.name}</h3>
+                <p class="slots-info">Available: <span class="${isFull ? 'text-danger' : 'text-success'}">${available_slots}</span> / ${zone.total_slots}</p>
+                <p class="status-text">${isFull ? 'Zone is Full' : 'Slots Available'}</p>
+                ${userCurrentLat !== null && userCurrentLon !== null ? 
+                    `<p class="text-muted">Distance: ${zone.distance_to_user_m < 1000 ? zone.distance_to_user_m.toFixed(0) + ' m' : (zone.distance_to_user_m / 1000).toFixed(2) + ' km'}</p>` : ''
+                }
+            `;
+
+            if (!isFull) {
+                button.addEventListener('click', () => {
+                    // Update the hidden input immediately
+                    document.getElementById('selected_zone_id').value = zone.id;
+                    showConfirmationModal(zone);
+                });
+            } else {
+                button.style.cursor = 'not-allowed';
+            }
+
+            colDiv.appendChild(button);
+            parkingButtonsContainer.appendChild(colDiv);
+
+            if (!closestAvailableZoneFound && !isFull && available_slots > 0) {
+                closestAvailableZoneFound = true;
+                closestAvailableZoneDisplay.innerText =
+                    `${zone.name} (${available_slots} slots, ${zone.distance_to_user_m < 1000 ? zone.distance_to_user_m.toFixed(0) + ' m' : (zone.distance_to_user_m / 1000).toFixed(2) + ' km'})`;
+            }
+        });
+
+        if (!closestAvailableZoneFound) {
+            closestAvailableZoneDisplay.innerText = 'No available zones nearby.';
+        }
+    }
+
+    // NEW FUNCTION: Shows the confirmation modal
+    function showConfirmationModal(zone) {
+        selectedZoneName.innerText = zone.name;
+        const available_slots = zone.total_slots - zone.curr_slots;
+        selectedZoneSlots.innerText = `${available_slots} / ${zone.total_slots}`;
+        
+        const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${zone.latitude},${zone.longitude}`;
+        viewOnMapsBtn.href = googleMapsUrl;
+        
+        confirmationModal.style.display = 'flex';
+    }
+
+    // Event listener for the "Cancel" button on the modal
+    cancelConfirmBtn.addEventListener('click', () => {
+        confirmationModal.style.display = 'none';
+        // Hide the form again
+        parkingForm.style.display = 'none';
+        // Reset the selected zone and disable the submit button
+        document.getElementById('selected_zone_id').value = '';
+        submitBtn.disabled = true;
+    });
+
+    proceedConfirmBtn.addEventListener('click', () => {
+        confirmationModal.style.display = 'none';
+        parkingForm.style.display = 'block'; // Show the form unconditionally
+        checkFormReady(); // Then, check the state to see if the button should be enabled
+    });
+    // --- END OF CRUCIAL FIX ---
+
+
+    // Function to check if both car and zone are selected and enable the button
+    function checkFormReady() {
+        const selectedCarId = carSelect.value;
+        const selectedZoneId = document.getElementById('selected_zone_id').value;
+
+        // The form is now always visible after proceed, so we only need to check the button state
+        if (selectedCarId && selectedZoneId) {
+            submitBtn.disabled = false;
+        } else {
+            submitBtn.disabled = true;
+        }
+    }
+
+    carSelect.addEventListener('change', checkFormReady);
+
+    function initializePage() {
+        loadingMessage.style.display = 'block';
+        userLocationDisplay.innerText = "Getting location...";
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    userCurrentLat = position.coords.latitude;
+                    userCurrentLon = position.coords.longitude;
+                    document.getElementById('user_lat').value = userCurrentLat;
+                    document.getElementById('user_lon').value = userCurrentLon;
+                    userLocationDisplay.innerText = `Lat: ${userCurrentLat.toFixed(4)}, Lon: ${userCurrentLon.toFixed(4)}`;
+                    renderParkingZones();
+                    checkFormReady();
+                },
+                (error) => {
+                    console.error("Geolocation error:", error);
+                    userCurrentLat = 14.6394;
+                    userCurrentLon = 121.0776;
+                    document.getElementById('user_lat').value = userCurrentLat;
+                    document.getElementById('user_lon').value = userCurrentLon;
+                    userLocationDisplay.innerText = "Geolocation not supported. Using default Ateneo location.";
+                    renderParkingZones();
+                    checkFormReady();
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        } else {
+            userCurrentLat = 14.6394;
+            userCurrentLon = 121.0776;
+            document.getElementById('user_lat').value = userCurrentLat;
+            document.getElementById('user_lon').value = userCurrentLon;
+            userLocationDisplay.innerText = "Geolocation not supported. Using default Ateneo location.";
+            renderParkingZones();
+            checkFormReady();
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', initializePage);
+</script>
+{% endblock %}

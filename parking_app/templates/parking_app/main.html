@@ -1,0 +1,37 @@
+{% extends 'parking_app/base.html' %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+    <section class="hero">
+        <h1>Welcome to BluePark</h1>
+        <p>Find the nearest available parking, log your car, and get real-time updates.</p>
+
+        {% if not user.is_authenticated %}
+            <div class="sign-in-button">
+                <a href="{% url 'login' %}" class="btn btn-primary">Sign In Now</a>
+            </div>
+        {% endif %}
+    </section>
+
+    <section class="instructions">
+        <h2>How it Works</h2>
+        <ul>
+            <li><strong>Sign Up/Log In:</strong> Create an account and register your car with your ADMU Car Pass ID.</li>
+            <li><strong>Enter Parking:</strong> Use your current location to find the nearest parking zones and see real-time availability.</li>
+            <li><strong>Exit Parking:</strong> Log your exit to update slot availability and earn reward points.</li>
+            <li><strong>Dashboard:</strong> View historical data and peak hour predictions to plan your parking.</li>
+        </ul>
+    </section>
+
+    <section class="faqs">
+        <h2>FAQs & Helpdesk</h2>
+        <h3>Q: How accurate is the parking availability?</h3>
+        <p>A: Our system updates availability in real-time using data from entry/exit logs. While highly accurate, minor delays might occur.</p>
+        <h3>Q: What if I overstay my parking?</h3>
+        <p>A: Overstaying may result in penalty points on your account. Please check the specific parking rules for each zone.</p>
+        </section>
+
+    <section class="contact-support">
+        <h2>Contact Support</h2>
+        <p>If you need assistance, please email us at <a href="mailto:support@atenoparking.com">support@atenoparking.com</a> or call (02) 8123-4567.</p>
+    </section>
+{% endblock %}
