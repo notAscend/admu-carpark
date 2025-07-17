@@ -29,7 +29,7 @@ Follow these steps to set up the project locally.
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/NotAscend/admu-carpark.git](https://github.com/Ascend/admu-carpark.git)
+    git clone https://github.com/NotAscend/admu-carpark.git
     cd your-repo-name
     ```
 
