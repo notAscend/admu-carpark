@@ -9,8 +9,8 @@
 
     <style>
         .parking-zone-button {
-            display: block; /* Makes it take full width */
-            width: 100%; /* Ensures it fills its column */
+            display: block;
+            width: 100%; 
             padding: 20px;
             margin-bottom: 15px;
             border: 2px solid #dee2e6;
@@ -37,10 +37,10 @@
             opacity: 0.7;
         }
         .parking-zone-button.highlight-nearest {
-            border-color: #007bff !important; /* Blue border for nearest */
+            border-color: #007bff !important; 
             box-shadow: 0 0 15px rgba(0,123,255,0.5);
             transform: scale(1.03);
-            background-color: #e0f2ff; /* Lighter blue background */
+            background-color: #e0f2ff; 
         }
         .parking-zone-button.is-selected {
             border-color: #0056b3 !important; /* Darker blue when selected */
@@ -62,6 +62,7 @@
         .text-success { color: #28a745 !important; }
         .text-danger { color: #dc3545 !important; }
 
+        /* Styles for the first modal (Confirmation Modal) */
         .confirmation-modal {
             position: fixed;
             z-index: 1050;
@@ -70,7 +71,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black backdrop */
-            display: none; /* Hidden by default */
+            display: none; 
             justify-content: center;
             align-items: center;
             padding: 15px;
@@ -96,13 +97,55 @@
             margin-right: 8px;
         }
 
+        .parking-modal {
+            display: none; /* CHANGED: This is now hidden by default */
+            position: fixed;
+            z-index: 1060; /* Higher z-index to appear on top of the confirmation modal */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        .parking-modal-content {
+            background-color: #fefefe;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            text-align: left;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .close-button:hover {
+            color: #000;
+        }
+        .parking-modal-title {
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+            text-align: center;
+        }
+
     </style>
 
     <p>Your current approximate location: <span id="user-location-display">Getting location...</span></p>
     <p><strong>Closest Parking Zone with Slots:</strong> <span id="closest-available-zone">N/A</span></p>
 
     <div class="row" id="parkingButtonsContainer">
-        <!-- Parking zone buttons will be dynamically added here by JavaScript -->
         <div class="col-12 text-center" id="loadingMessage">
             <p class="text-muted">Loading parking zone data...</p>
             <div class="spinner-border text-primary" role="status">
@@ -133,26 +176,34 @@
         </div>
     </div>
 
-    <form id="parkingForm" method="post" action="{% url 'start_parking_session' %}" style="display:none;">
-        {% csrf_token %}
-        <input type="hidden" name="user_lat" id="user_lat">
-        <input type="hidden" name="user_lon" id="user_lon">
-        <input type="hidden" name="selected_zone_id" id="selected_zone_id">
-        <input type="hidden" name="selected_car_id" id="selected_car_id">
+    <div id="parkingSessionModal" class="parking-modal">
+        <div class="parking-modal-content">
+            <span class="close-button">×</span>
+            <h2 class="parking-modal-title">Start a Parking Session</h2>
+            
+            <form id="parkingForm" method="post" action="{% url 'start_parking_session' %}">
+                {% csrf_token %}
+                <input type="hidden" name="user_lat" id="user_lat">
+                <input type="hidden" name="user_lon" id="user_lon">
+                <input type="hidden" name="selected_zone_id" id="selected_zone_id">
+                <input type="hidden" name="selected_car_id" id="selected_car_id">
 
-        <div class="form-group mt-3">
-            <label for="car_select">Select your Car:</label>
-            <select class="form-control" id="car_select" name="car_id" required>
-                <option value="">-- Select a Car --</option>
-                {% for car in user_cars %}
-                    <option value="{{ car.id }}">{{ car.plate_number }} ({{ car.car_type }})</option>
-                {% endfor %}
-            </select>
+                <div class="form-group mt-3">
+                    <label for="car_select">Select your Car:</label>
+                    <select class="form-control" id="car_select" name="car_id" required>
+                        <option value="">-- Select a Car --</option>
+                        {% for car in user_cars %}
+                            <option value="{{ car.id }}">{{ car.plate_number }} ({{ car.car_type }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary mt-3" id="submitBtn" disabled>
+                    Start Parking Session
+                </button>
+            </form>
         </div>
-        <button type="submit" class="btn btn-primary mt-3" id="submitBtn" disabled>
-            Start Parking Session
-        </button>
-    </form>
+    </div>
+
 </div>
 {% endblock %}
 
@@ -176,20 +227,24 @@
     }
 
     const parkingButtonsContainer = document.getElementById('parkingButtonsContainer');
-    const parkingForm = document.getElementById('parkingForm');
     const userLocationDisplay = document.getElementById('user-location-display');
     const closestAvailableZoneDisplay = document.getElementById('closest-available-zone');
     const loadingMessage = document.getElementById('loadingMessage');
     const carSelect = document.getElementById('car_select');
     const submitBtn = document.getElementById('submitBtn'); // Added this for easier access
     
-    // New Modal Elements
+    // Existing Modal Elements
     const confirmationModal = document.getElementById('confirmation-modal');
     const selectedZoneName = document.getElementById('selected-zone-name');
     const selectedZoneSlots = document.getElementById('selected-zone-slots');
     const viewOnMapsBtn = document.getElementById('view-on-maps-btn');
     const cancelConfirmBtn = document.getElementById('cancel-confirm-btn');
     const proceedConfirmBtn = document.getElementById('proceed-confirm-btn');
+
+    // Parking Session Modal Elements
+    const parkingSessionModal = document.getElementById('parkingSessionModal');
+    const parkingSessionModalCloseBtn = parkingSessionModal.querySelector('.close-button');
+
 
     let userCurrentLat = null;
     let userCurrentLon = null;
@@ -278,7 +333,7 @@
         }
     }
 
-    // NEW FUNCTION: Shows the confirmation modal
+    // Function to show the confirmation modal
     function showConfirmationModal(zone) {
         selectedZoneName.innerText = zone.name;
         const available_slots = zone.total_slots - zone.curr_slots;
@@ -290,30 +345,35 @@
         confirmationModal.style.display = 'flex';
     }
 
-    // Event listener for the "Cancel" button on the modal
+    function showParkingSessionModal() {
+        parkingSessionModal.style.display = 'flex';
+    }
+    
+    function hideParkingSessionModal() {
+        parkingSessionModal.style.display = 'none';
+    }
+
     cancelConfirmBtn.addEventListener('click', () => {
         confirmationModal.style.display = 'none';
-        // Hide the form again
-        parkingForm.style.display = 'none';
-        // Reset the selected zone and disable the submit button
         document.getElementById('selected_zone_id').value = '';
         submitBtn.disabled = true;
     });
 
     proceedConfirmBtn.addEventListener('click', () => {
         confirmationModal.style.display = 'none';
-        parkingForm.style.display = 'block'; // Show the form unconditionally
-        checkFormReady(); // Then, check the state to see if the button should be enabled
+        showParkingSessionModal(); 
+        checkFormReady(); 
     });
-    // --- END OF CRUCIAL FIX ---
 
+    parkingSessionModalCloseBtn.addEventListener('click', () => {
+        hideParkingSessionModal();
+        document.getElementById('car_select').value = '';
+        document.getElementById('selected_zone_id').value = '';
+    });
 
-    // Function to check if both car and zone are selected and enable the button
     function checkFormReady() {
         const selectedCarId = carSelect.value;
         const selectedZoneId = document.getElementById('selected_zone_id').value;
-
-        // The form is now always visible after proceed, so we only need to check the button state
         if (selectedCarId && selectedZoneId) {
             submitBtn.disabled = false;
         } else {
@@ -362,5 +422,7 @@
     }
     
     document.addEventListener('DOMContentLoaded', initializePage);
+    
 </script>
+
 {% endblock %}

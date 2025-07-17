@@ -1,17 +1,165 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Ateneo Parking System</title>
-</head>
-<body>
-    <h1>Login to Ateneo Parking System</h1>
-    <p>This is the login page content.</p>
-    <form method="post">
-        {% csrf_token %} 
-        {{ form.as_p }} 
-        <button type="submit">Login</button>
-    </form>
-</body>
-</html>
+{% extends 'parking_app/base.html' %}
+{% load static %}
+
+{% block title %}Log In{% endblock %}
+
+{% block content %}
+<style>
+    /* Modal styles (same as signup for consistency) */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1000; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+        display: flex; /* Use flexbox to center content */
+        align-items: center; /* Center vertically */
+        justify-content: center; /* Center horizontally */
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        width: 90%;
+        max-width: 400px;
+        position: relative;
+        font-family: 'Inter', sans-serif;
+        color: #333;
+        text-align: center;
+    }
+
+    .close-button {
+        color: #aaa;
+        position: absolute;
+        top: 15px;
+        right: 25px;
+        font-size: 32px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: #000;
+    }
+
+    .modal-content h2 {
+        color: #2c3e50;
+        margin-bottom: 25px;
+        font-size: 1.8em;
+    }
+
+    /* Form field styling (consistent with signup) */
+    form p {
+        margin-bottom: 15px;
+    }
+
+    form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #555;
+        text-align: left;
+    }
+
+    form input[type="text"],
+    form input[type="password"] {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-size: 1em;
+        transition: border-color 0.3s ease;
+    }
+    
+    form button {
+        background-color: #3498db;
+        color: white;
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+        width: 100%;
+        margin-top: 20px;
+    }
+
+    form button:hover {
+        background-color: #2980b9;
+    }
+
+    /* Helper and error text */
+    .helptext, .help-text {
+        font-size: 0.8em;
+        color: #777;
+        margin-top: 5px;
+        text-align: left;
+    }
+
+    .errorlist {
+        color: red;
+        font-size: 0.9em;
+        margin-top: 5px;
+        text-align: left;
+    }
+</style>
+
+<div id="loginModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Log In</h2>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+                <p>
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <span class="helptext">{{ field.help_text }}</span>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <ul class="errorlist">
+                            <li>{{ error }}</li>
+                        </ul>
+                    {% endfor %}
+                </p>
+            {% endfor %}
+            <button type="submit">Log In</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const loginModal = document.getElementById('loginModal');
+    const closeButton = document.querySelector('.close-button');
+
+    // Display the modal when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+        loginModal.style.display = 'flex';
+    });
+
+    // Close the modal when the 'x' button is clicked
+    closeButton.addEventListener('click', () => {
+        loginModal.style.display = 'none';
+        window.location.href = '{% url "main" %}'; // Example: redirect to home
+    });
+
+    // Close modal if user clicks outside
+    window.addEventListener('click', (event) => {
+        if (event.target === loginModal) {
+            loginModal.style.display = 'none';
+            window.location.href = '{% url "main" %}'; // Example: redirect to home
+        }
+    });
+</script>
+{% endblock %}

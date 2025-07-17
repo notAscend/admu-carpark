@@ -1,13 +1,342 @@
 {% extends 'parking_app/base.html' %}
+{% load static %}
+
 {% block title %}Sign Up{% endblock %}
+
 {% block content %}
-    <h2>Sign Up</h2>
-    <form method="post">
-        {% csrf_token %}
-        <h3>Account Details</h3>
-        {{ signup_form.as_p }}
-        <h3>Car Details</h3>
-        {{ car_form.as_p }}
-        <button type="submit">Register</button>
-    </form>
+<style>
+    /* Modal styles */
+    .modal {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1000; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
+        display: flex; /* Use flexbox to center content */
+        align-items: center; /* Center vertically */
+        justify-content: center; /* Center horizontally */
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        width: 90%;
+        max-width: 600px;
+        position: relative;
+        font-family: 'Inter', sans-serif;
+        color: #333;
+    }
+
+    .close-button {
+        color: #aaa;
+        position: absolute;
+        top: 15px;
+        right: 25px;
+        font-size: 32px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: color 0.3s ease;
+    }
+
+    .close-button:hover,
+    .close-button:focus {
+        color: #000;
+    }
+
+    .step-content {
+        display: none; /* All steps hidden by default */
+    }
+    .step-content.active {
+        display: block; 
+    }
+
+    .step-content h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 25px;
+        font-size: 1.8em;
+    }
+
+  
+    form p {
+        margin-bottom: 15px;
+    }
+
+    form label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #555;
+    }
+
+    form input[type="text"],
+    form input[type="email"],
+    form input[type="password"],
+    form select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-sizing: border-box; /* Include padding in width */
+        font-size: 1em;
+        transition: border-color 0.3s ease;
+    }
+
+    form input[type="text"]:focus,
+    form input[type="email"]:focus,
+    form input[type="password"]:focus,
+    form select:focus {
+        border-color: #3498db;
+        outline: none;
+    }
+
+    /* Helper text styling */
+    .helptext, .help-text {
+        font-size: 0.8em;
+        color: #777;
+        margin-top: 5px;
+    }
+
+    /* Error messages (hidden as per previous request, but good to have a placeholder) */
+    .errorlist {
+        color: red;
+        font-size: 0.9em;
+        margin-top: 5px;
+    }
+
+    /* Navigation buttons */
+    .nav-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+    }
+
+    .nav-buttons button {
+        padding: 12px 25px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1.1em;
+        font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    .prev-button {
+        background-color: #ecf0f1;
+        color: #34495e;
+    }
+
+    .prev-button:hover {
+        background-color: #bdc3c7;
+        transform: translateY(-2px);
+    }
+
+    .next-button, .submit-button {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .next-button:hover, .submit-button:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+    }
+
+    /* Other brand input field */
+    #otherBrandField {
+        margin-top: 15px;
+    }
+</style>
+
+<div id="signupModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <form method="post" id="multiStepSignupForm">
+            {% csrf_token %}
+
+            <div class="step-content active" id="step-1">
+                <h2>Account Details</h2>
+                {% for field in signup_form %}
+                    <p>
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <span class="helptext">{{ field.help_text }}</span>
+                        {% endif %}
+                        {% if field.errors %}
+                            <ul class="errorlist">
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </p>
+                {% endfor %}
+                <div class="nav-buttons">
+                    <button type="button" class="next-button" onclick="nextStep(1)">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Car Details -->
+            <div class="step-content" id="step-2">
+                <h2>Car Details</h2>
+                {% for field in car_form %}
+                    <p>
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.help_text %}
+                            <span class="helptext">{{ field.help_text }}</span>
+                        {% endif %}
+                        {% if field.errors %}
+                            <ul class="errorlist">
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </p>
+                {% endfor %}
+
+                <!-- Other brand input field, conditionally displayed by JS -->
+                <p id="otherBrandField" style="display: none;">
+                    <label for="otherBrand">Please Specify Other Brand:</label>
+                    <input type="text" id="otherBrand" name="other_brand">
+                </p>
+
+                <div class="nav-buttons">
+                    <button type="button" class="prev-button" onclick="prevStep(2)">Previous</button>
+                    <button type="submit" class="submit-button">Sign Up</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const signupModal = document.getElementById('signupModal');
+    const closeButton = document.querySelector('.close-button');
+    const form = document.getElementById('multiStepSignupForm');
+    const steps = document.querySelectorAll('.step-content');
+    let currentStep = 1;
+
+    // Car Brand "Other" logic
+    const carBrandSelect = document.getElementById('id_car_brand');
+    const otherBrandField = document.getElementById('otherBrandField');
+    const otherBrandInput = document.getElementById('otherBrand');
+
+    // Initial check for 'Other' if form is reloaded with previous data
+    if (carBrandSelect && carBrandSelect.value === 'Other') {
+        otherBrandField.style.display = 'block';
+        otherBrandInput.required = true;
+    }
+
+    if (carBrandSelect) {
+        carBrandSelect.addEventListener('change', function() {
+            if (this.value === 'Other') {
+                otherBrandField.style.display = 'block';
+                otherBrandInput.required = true;
+            } else {
+                otherBrandField.style.display = 'none';
+                otherBrandInput.required = false;
+            }
+        });
+    }
+
+    // Function to show a specific step
+    function showStep(stepNumber) {
+        steps.forEach((step, index) => {
+            if (index + 1 === stepNumber) {
+                step.classList.add('active');
+            } else {
+                step.classList.remove('active');
+            }
+        });
+        currentStep = stepNumber;
+    }
+
+    // Function to validate current step before proceeding
+    function validateStep(stepNumber) {
+        let isValid = true;
+        let fieldsToValidate = [];
+
+        if (stepNumber === 1) {
+            // Account Details fields
+            fieldsToValidate.push(document.getElementById('id_admu_id'));
+            fieldsToValidate.push(document.getElementById('id_email'));
+            fieldsToValidate.push(document.getElementById('id_password1'));
+            fieldsToValidate.push(document.getElementById('id_password2'));
+        } else if (stepNumber === 2) {
+            // Car Details fields
+            fieldsToValidate.push(document.getElementById('id_car_pass_number'));
+            fieldsToValidate.push(document.getElementById('id_plate_number'));
+            fieldsToValidate.push(document.getElementById('id_car_brand'));
+            fieldsToValidate.push(document.getElementById('id_car_type'));
+            
+            // Validate 'other_brand' if 'Other' is selected
+            if (carBrandSelect && carBrandSelect.value === 'Other') {
+                fieldsToValidate.push(otherBrandInput);
+            }
+        }
+
+        for (const field of fieldsToValidate) {
+            if (field && field.required && !field.value.trim()) {
+                isValid = false;
+                // Optionally, add visual feedback for empty fields
+                field.style.borderColor = 'red';
+            } else if (field) {
+                field.style.borderColor = '#ddd'; // Reset border color
+            }
+        }
+        return isValid;
+    }
+
+    // Navigation functions
+    function nextStep(stepNumber) {
+        if (validateStep(stepNumber)) {
+            showStep(stepNumber + 1);
+        } else {
+            alert('Please fill in all required fields.'); // Simple alert for missing fields
+        }
+    }
+
+    function prevStep(stepNumber) {
+        showStep(stepNumber - 1);
+    }
+
+    // Modal close functionality
+    closeButton.addEventListener('click', () => {
+        signupModal.style.display = 'none';
+        // Optionally redirect or do something else when modal is closed
+        window.location.href = '{% url "main" %}'; // Example: redirect to home
+    });
+
+    // Close modal if clicked outside (optional, but good UX)
+    window.addEventListener('click', (event) => {
+        if (event.target === signupModal) {
+            signupModal.style.display = 'none';
+            window.location.href = '{% url "main" %}'; // Example: redirect to home
+        }
+    });
+
+    // Show the first step when the page loads (or when a button triggers the modal)
+    document.addEventListener('DOMContentLoaded', () => {
+        showStep(1); // Ensure the first step is active on load
+        signupModal.style.display = 'flex'; // Make the modal visible
+    });
+
+    // Handle form submission (Django will handle server-side validation)
+    form.addEventListener('submit', function(event) {
+        // Client-side validation for the final step before submission
+        if (!validateStep(currentStep)) {
+            event.preventDefault(); // Prevent form submission if validation fails
+            alert('Please fill in all required fields before signing up.');
+        }
+        // If validation passes, the form will submit normally to Django
+    });
+</script>
 {% endblock %}

@@ -12,6 +12,7 @@ from django.conf import settings
 from .forms import SignUpForm, CarDetailsForm, LoginForm, ParkingZoneForm
 from .models import CustomUser, CarPass, ParkingZone, ParkingSession
 from django.db.models import Avg
+from datetime import timedelta
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     """
@@ -42,17 +43,23 @@ def signup_view(request):
     if request.method == 'POST':
         signup_form = SignUpForm(request.POST)
         car_form = CarDetailsForm(request.POST)
+        
         if signup_form.is_valid() and car_form.is_valid():
+            # Save the new user and car pass
             user = signup_form.save()
-            car = car_form.save(commit=False)
-            car.user = user
-            car.save()
-            login(request, user)
-            return redirect('account') 
+            car_pass = car_form.save(commit=False)
+            car_pass.user = user
+            car_pass.save()
+            return redirect('main') # Or your login page name
     else:
         signup_form = SignUpForm()
         car_form = CarDetailsForm()
-    return render(request, 'parking_app/signup.html', {'signup_form': signup_form, 'car_form': car_form})
+
+    context = {
+        'signup_form': signup_form,
+        'car_form': car_form,
+    }
+    return render(request, 'parking_app/signup.html', context)
 
 def login_view(request):
     if request.method == 'POST':
@@ -265,13 +272,40 @@ def parking_zones_api_view(request):
 
 @login_required
 def dashboard_view(request):
-    # Fetch all parking sessions for the logged-in user, ordered by most recent
-    parking_sessions = ParkingSession.objects.filter(
-        user=request.user
+    user = request.user
+    
+    completed_sessions = ParkingSession.objects.filter(
+        car__user=user, 
+        end_time__isnull=False
     ).order_by('-start_time')
 
+    # Calculate and format duration for each session
+    for session in completed_sessions:
+        if session.end_time and session.start_time:
+            duration = session.end_time - session.start_time
+            
+            total_minutes = int(duration.total_seconds() / 60)
+            hours = total_minutes // 60
+            minutes = total_minutes % 60
+            
+            time_string = ''
+            if hours > 0:
+                time_string += f"{hours} hour{'s' if hours > 1 else ''}"
+            if minutes > 0:
+                if hours > 0:
+                    time_string += ", "
+                time_string += f"{minutes} minute{'s' if minutes > 1 else ''}"
+            
+            if not time_string:
+                time_string = "Less than a minute"
+
+            session.formatted_duration = time_string
+        else:
+            session.formatted_duration = "N/A"
+
     context = {
-        'parking_sessions': parking_sessions,
-        # You can add other context data here, like historical data predictions
+        'user': user,
+        'completed_sessions': completed_sessions,
     }
+    
     return render(request, 'parking_app/dashboard.html', context)

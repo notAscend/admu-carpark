@@ -1,21 +1,19 @@
-# In parking_app/models.py
-
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
-# Validator to ensure the email is an Ateneo student email
 def validate_admu_email(value):
     if not value.endswith('@student.ateneo.edu'):
         raise ValidationError('Only @student.ateneo.edu emails are allowed.')
+    
 class CustomUserManager(BaseUserManager):
     def create_user(self, admu_id, email, password=None, **extra_fields):
         if not admu_id:
-            raise ValueError('The ADMU ID must be set')
+            raise ValueError('The ADMU Number must be set')
         if not email:
-            raise ValueError('The Email must be set')
+            raise ValueError('The email must be set')
         
         email = self.normalize_email(email)
         user = self.model(admu_id=admu_id, email=email, **extra_fields)
@@ -37,16 +35,19 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractUser):
     admu_id = models.CharField(
+        verbose_name='Student ID Number',
         max_length=6,
         unique=True,
         validators=[
-            RegexValidator(r'^\d{6}$', 'ADMU ID must be exactly 6 digits.'),
-        ]
+            RegexValidator(r'^\d{6}$', 'ID Number must be exactly 6 digits.'),
+        ],
+        help_text='e.g, 24xxxx'
     )
     email = models.EmailField(
-        'email address', 
+        verbose_name='Ateneo Email Address', 
         unique=True,
-        validators=[validate_admu_email]
+        validators=[validate_admu_email],
+        help_text="e.g., name@student.ateneo.edu"
     )
     
     USERNAME_FIELD = 'admu_id'
@@ -66,7 +67,7 @@ class CarPass(models.Model):
             RegexValidator(r'^\d{6}$', 'Car Pass Number must be exactly 6 digits.'),
         ]
     )
-    plate_number = models.CharField(max_length=10, unique=True)
+    plate_number = models.CharField(max_length=7, unique=True)
     car_brand = models.CharField(max_length=50)
     car_type = models.CharField(max_length=50)
 

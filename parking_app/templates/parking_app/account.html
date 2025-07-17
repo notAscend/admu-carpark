@@ -6,8 +6,16 @@
 {% block content %}
 <div class="container mt-5">
     <h1>My Account</h1>
+    <style>
+        .text-green {
+            color: #28a745 !important;
+        }
+        .text-red {
+            color: #dc3545 !important;
+        }
+    </style>
 
-    <h2>Welcome, {{ user.username }}!</h2>
+    <h2>Welcome, {{ user.admu_id }}!</h2>
 
     <section class="profile-info">
         <h3>Your Profile</h3>
@@ -25,17 +33,22 @@
                 {% endfor %}
             </ul>
         {% else %}
-            <p>You have no registered car passes. Please add one in the admin panel.</p>
+            <p>You have no registered car passes. Kindly sign up for one. </p>
         {% endif %}
     </section>
 
     <section class="parking-actions">
         <h3>Parking Actions</h3>
         {% if active_session %}
-            <div class="alert alert-info" role="alert">
-                <h4 class="alert-heading">Currently Parked</h4>
+            <div class="alert alert-success" role="alert">
+                <h4 class="alert-heading text-green">Currently Parked</h4>
                 <p>Your car, <strong>{{ active_session.car.plate_number }}</strong>, is currently parked at <strong>{{ active_session.parking_zone.area }}</strong>.</p>
                 <p>Entered at: <strong>{{ active_session.start_time|date:"F d, Y P" }}</strong></p>
+                
+                <p class="live-counter-text">
+                    <strong>Time Parked:</strong> <span id="parking-duration-counter">0 minutes</span>
+                </p>
+
                 <hr>
                 <p class="mb-0">Please use the Exit Parking button when you leave.</p>
                 <form action="{% url 'exit_parking' %}" method="post">
@@ -44,11 +57,58 @@
                     <button type="submit" class="btn btn-warning mt-3">Exit Parking</button>
                 </form>
             </div>
+            
+            <input type="hidden" id="start-time" value="{{ active_session.start_time|date:'c' }}">
+
         {% else %}
-            <p>You are not currently parked.</p>
+            <p class="text-red">You are not currently parked.</p>
             <button onclick="window.location.href='{% url 'enter_parking' %}'" class="btn btn-primary">Enter Parking System</button>
         {% endif %}
     </section>
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const startTimeInput = document.getElementById('start-time');
+        const durationCounter = document.getElementById('parking-duration-counter');
+
+        if (startTimeInput && durationCounter) {
+            const startTime = new Date(startTimeInput.value);
+
+            function updateDuration() {
+                const now = new Date();
+                const diffInSeconds = Math.floor((now - startTime) / 1000);
+                
+                const totalMinutes = Math.floor(diffInSeconds / 60);
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = totalMinutes % 60;
+                
+                let timeString = '';
+                if (hours > 0) {
+                    timeString += `${hours} hour${hours > 1 ? 's' : ''}`;
+                }
+                if (minutes > 0) {
+                    if (hours > 0) {
+                        timeString += `, `;
+                    }
+                    timeString += `${minutes} minute${minutes > 1 ? 's' : ''}`;
+                }
+                
+                // Handle case where time is less than a minute
+                if (timeString === '') {
+                    timeString = '0 minutes';
+                }
+
+                durationCounter.innerText = timeString;
+            }
+
+            // Update the counter immediately and then every second
+            updateDuration();
+            setInterval(updateDuration, 1000);
+        }
+    });
+</script>
 {% endblock %}

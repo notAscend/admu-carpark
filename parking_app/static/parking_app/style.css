@@ -208,15 +208,6 @@ form button:hover,
 .availability-fill[data-occupancy-grade="low"] { background-color: #28a745; /* Green */ }
 .availability-fill[data-occupancy-grade="medium"] { background-color: #ffc107; /* Yellow */ }
 .availability-fill[data-occupancy-grade="high"] { background-color: #dc3545; /* Red */ }
-
-.parking-map {
-    height: 400px;
-    width: 100%;
-    border-radius: 8px;
-    margin-top: 20px;
-    border: 1px solid #ddd;
-}
-
 /* Dashboard */
 .dashboard-grid {
     display: grid;
