@@ -81,10 +81,10 @@ class ParkingZone(models.Model):
     total_slots = models.IntegerField(default=0)
     curr_slots = models.IntegerField(default=0)
     ZONE_CHOICES = [
-        ('ARETE', 'North'),
-        ('JSEC', 'Central'),
-        ('UPPER_EAST', 'Upper East'),
-        ('LOWER_EAST', 'Lower East'),
+        ('ARETE', 'North Parking Lot'),
+        ('JSEC', 'JSEC Parking Lot'),
+        ('UPPER_EAST', 'Upper East Parking Lot'),
+        ('LOWER_EAST', 'Lower East Parking Lot'),
     ]
     zone_code = models.CharField(max_length=20, choices=ZONE_CHOICES, unique=True)
     @property

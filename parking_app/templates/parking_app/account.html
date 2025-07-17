@@ -4,8 +4,7 @@
 {% block title %}My Account{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1>My Account</h1>
+<div class="container my-5">
     <style>
         .text-green {
             color: #28a745 !important;
@@ -15,57 +14,72 @@
         }
     </style>
 
-    <h2>Welcome, {{ user.admu_id }}!</h2>
+    <h1 class="mb-2">Welcome, {{ user.admu_id }}!</h1>
 
-    <section class="profile-info">
-        <h3>Your Profile</h3>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <h4>My Registered Cars</h4>
-        {% if user_car_passes %}
-            <ul>
-                {% for car_pass in user_car_passes %}
-                    <li>
-                        <strong>Plate Number:</strong> {{ car_pass.plate_number }}<br>
-                        <strong>Car Pass Number:</strong> {{ car_pass.car_pass_number }}<br>
-                        <strong>Brand:</strong> {{ car_pass.car_brand }}<br>
-                        <strong>Type:</strong> {{ car_pass.car_type }}
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>You have no registered car passes. Kindly sign up for one. </p>
-        {% endif %}
-    </section>
+    <div class="row mt-4 g-4">
+        <div class="col-lg-6">
+            <section class="profile-info card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h3 class="card-title mb-3">Your Profile</h3>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
 
-    <section class="parking-actions">
-        <h3>Parking Actions</h3>
-        {% if active_session %}
-            <div class="alert alert-success" role="alert">
-                <h4 class="alert-heading text-green">Currently Parked</h4>
-                <p>Your car, <strong>{{ active_session.car.plate_number }}</strong>, is currently parked at <strong>{{ active_session.parking_zone.area }}</strong>.</p>
-                <p>Entered at: <strong>{{ active_session.start_time|date:"F d, Y P" }}</strong></p>
-                
-                <p class="live-counter-text">
-                    <strong>Time Parked:</strong> <span id="parking-duration-counter">0 minutes</span>
-                </p>
+                    <h4 class="mt-4">My Registered Cars</h4>
+                    {% if user_car_passes %}
+                        <ul class="list-group list-group-flush">
+                            {% for car_pass in user_car_passes %}
+                                <li class="list-group-item">
+                                    <div>
+                                        <strong>Plate Number:</strong> {{ car_pass.plate_number }}
+                                        <span class="badge bg-primary float-end">{{ car_pass.car_pass_number }}</span>
+                                    </div>
+                                    <small class="text-muted">{{ car_pass.car_brand }} - {{ car_pass.car_type }}</small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted">You have no registered car passes. Kindly sign up for one.</p>
+                        <a href="#" class="btn btn-sm btn-outline-primary mt-2">Sign Up for a Car Pass</a>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
 
-                <hr>
-                <p class="mb-0">Please use the Exit Parking button when you leave.</p>
-                <form action="{% url 'exit_parking' %}" method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="session_id" value="{{ active_session.id }}">
-                    <button type="submit" class="btn btn-warning mt-3">Exit Parking</button>
-                </form>
-            </div>
-            
-            <input type="hidden" id="start-time" value="{{ active_session.start_time|date:'c' }}">
+        <div class="col-lg-6">
+            <section class="parking-actions card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <h3 class="card-title mb-3">Parking Actions</h3>
+                    {% if active_session %}
+                        <div class="alert alert-success d-flex flex-column align-items-start" role="alert">
+                            <h4 class="alert-heading text-green mb-1">Currently Parked</h4>
+                            <hr class="my-2">
+                            <p class="mb-0">Your car, <strong>{{ active_session.car.plate_number }}</strong>, is currently parked at <strong>{{ active_session.parking_zone.area }}</strong>.</p>
+                            <p class="mb-0">Entered at: <strong>{{ active_session.start_time|date:"F d, Y P" }}</strong></p>
+                            
+                            <p class="live-counter-text mt-3 mb-0">
+                                <strong class="text-dark">Time Parked:</strong> <span id="parking-duration-counter" class="fw-bold">0 minutes</span>
+                            </p>
 
-        {% else %}
-            <p class="text-red">You are not currently parked.</p>
-            <button onclick="window.location.href='{% url 'enter_parking' %}'" class="btn btn-primary">Enter Parking System</button>
-        {% endif %}
-    </section>
+                            <hr class="w-100 my-3">
+                            <p class="mb-0">Please use the Exit Parking button when you leave.</p>
+                            <form action="{% url 'exit_parking' %}" method="post" class="w-100 mt-3">
+                                {% csrf_token %}
+                                <input type="hidden" name="session_id" value="{{ active_session.id }}">
+                                <button type="submit" class="btn btn-warning w-100">Exit Parking</button>
+                            </form>
+                        </div>
+                        
+                        <input type="hidden" id="start-time" value="{{ active_session.start_time|date:'c' }}">
 
+                    {% else %}
+                        <div class="alert alert-info" role="alert">
+                            <h4 class="alert-heading mb-1 text-red">Not Parked</h4>
+                        </div>
+                        <button onclick="window.location.href='{% url 'enter_parking' %}'" class="btn btn-primary w-100">Enter Parking System</button>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -97,7 +111,6 @@
                     timeString += `${minutes} minute${minutes > 1 ? 's' : ''}`;
                 }
                 
-                // Handle case where time is less than a minute
                 if (timeString === '') {
                     timeString = '0 minutes';
                 }
@@ -105,7 +118,6 @@
                 durationCounter.innerText = timeString;
             }
 
-            // Update the counter immediately and then every second
             updateDuration();
             setInterval(updateDuration, 1000);
         }

@@ -13,6 +13,7 @@ urlpatterns = [
 
     # Dashboard page
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/busyness_data/', views.get_busyness_data, name='busyness_data'),
     path('park/enter/', views.enter_parking_view, name='enter_parking'),
     path('park/start_session/', views.start_parking_session_view, name='start_parking_session'),
     path('park/exit/', views.exit_parking_view, name='exit_parking'),

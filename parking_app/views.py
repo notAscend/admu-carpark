@@ -10,9 +10,11 @@ import math
 import json
 from django.conf import settings
 from .forms import SignUpForm, CarDetailsForm, LoginForm, ParkingZoneForm
-from .models import CustomUser, CarPass, ParkingZone, ParkingSession
+from .models import CustomUser, CarPass, ParkingZone, ParkingSession, ParkingZone
 from django.db.models import Avg
+from django.utils import timezone
 from datetime import timedelta
+from collections import defaultdict
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     """
@@ -273,7 +275,6 @@ def parking_zones_api_view(request):
 @login_required
 def dashboard_view(request):
     user = request.user
-    
     completed_sessions = ParkingSession.objects.filter(
         car__user=user, 
         end_time__isnull=False
@@ -309,3 +310,47 @@ def dashboard_view(request):
     }
     
     return render(request, 'parking_app/dashboard.html', context)
+
+def get_busyness_data(request):
+    """
+    Returns JSON data for charts showing busy times for each parking zone.
+    """
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=7)
+    
+    # Get all parking sessions that were active in the last week
+    sessions = ParkingSession.objects.filter(
+        start_time__lte=end_date,
+        end_time__gte=start_date
+    ).select_related('parking_zone')
+
+    # Get all active parking zones
+    parking_zones = ParkingZone.objects.all()
+
+    # Initialize a nested dictionary to store hourly counts for each zone
+    zone_hourly_counts = {
+        zone.area: defaultdict(int) for zone in parking_zones
+    }
+    
+    # Aggregate data by counting sessions per hour for each zone
+    for session in sessions:
+        if session.parking_zone and session.start_time:
+            start_hour = session.start_time.hour
+            zone_area = session.parking_zone.area
+            zone_hourly_counts[zone_area][start_hour] += 1
+    
+    # Prepare the final data structure for Chart.js
+    data = {}
+    for zone_area, hourly_counts in zone_hourly_counts.items():
+        data[zone_area] = {
+            'labels': [f'{h}:00' for h in range(24)],
+            'datasets': [{
+                'label': 'Number of Parked Cars',
+                'data': [hourly_counts[h] for h in range(24)],
+                'backgroundColor': 'rgba(54, 162, 235, 0.6)',
+                'borderColor': 'rgba(54, 162, 235, 1)',
+                'borderWidth': 1
+            }]
+        }
+
+    return JsonResponse(data)

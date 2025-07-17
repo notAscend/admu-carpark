@@ -1,37 +1,89 @@
 {% extends 'parking_app/base.html' %}
-{% block title %}Welcome{% endblock %}
+{% load static %}
+
+{% block title %}Home{% endblock %}
+
 {% block content %}
-    <section class="hero">
-        <h1>Welcome to BluePark</h1>
-        <p>Find the nearest available parking, log your car, and get real-time updates.</p>
+<div class="container-fluid">
+    <style>
+        .how-it-works-img {
+            max-height: 300px;
+            width: auto;
+            display: block;
+            margin: 0 auto;
+        }
 
-        {% if not user.is_authenticated %}
-            <div class="sign-in-button">
-                <a href="{% url 'login' %}" class="btn btn-primary">Sign In Now</a>
+        .hero-section {
+            background-image: url('{% static 'parking_app/images/bg.jpeg' %}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .hero-overlay {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 1rem;
+            padding: 3rem;
+            max-width: 90%;
+        }
+    </style>
+
+    <section class="hero-section py-5">
+        <div class="hero-overlay">
+            <h1 class="display-4 fw-bold">Park Smarter, Not Harder</h1>
+            <p class="lead mt-3 mb-4">Your campus parking solution. Find a spot, manage your sessions, and track your history all in one place.</p>
+            {% if user.is_authenticated %}
+                <div class="d-flex justify-content-center">
+                    <button type="button" class="btn btn-primary btn-lg me-2 shadow-sm" onclick="window.location.href='{% url 'dashboard' %}'">Go to Dashboard</button>
+                </div>
+            {% else %}
+                <div class="d-flex justify-content-center">
+                    <button type="button" class="btn btn-primary btn-lg me-2 shadow-sm" onclick="window.location.href='{% url 'signup' %}'">Sign Up Now</button>
+                    <button type="button" class="btn btn-info btn-lg shadow-sm" onclick="window.location.href='{% url 'login' %}'">Login</button>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="how-it-works py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5 fw-bold">How It Works</h2>
+            <div class="row text-center g-4">
+                <div class="col-md-4">
+                    <div class="card p-3 shadow-sm h-100">
+                        <h3 class="fw-bold mt-3">1. Sign Up</h3>
+                        <p class="text-muted">Create your Ateneo Parking account with your school ID and car details.</p>
+                        <img src="{% static 'parking_app/images/how-it-works/signup.png' %}" alt="Sign Up" class="img-fluid mt-3 rounded how-it-works-img">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 shadow-sm h-100">
+                        <h3 class="fw-bold mt-3">2. Enter Parking System</h3>
+                        <p class="text-muted">Enter and choose a parking zone with a single tap.</p>
+                        <img src="{% static 'parking_app/images/how-it-works/register.png' %}" alt="Enter Parking System" class="img-fluid mt-3 rounded how-it-works-img">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card p-3 shadow-sm h-100">
+                        <h3 class="fw-bold mt-3">3. Check Out The Dashboard</h3>
+                        <p class="text-muted">Know where to park based on yours and other's parking history.</p>
+                        <img src="{% static 'parking_app/images/how-it-works/park.png' %}" alt="Check Out The Dashboard" class="img-fluid mt-3 rounded how-it-works-img">
+                    </div>
+                </div>
             </div>
-        {% endif %}
+        </div>
     </section>
 
-    <section class="instructions">
-        <h2>How it Works</h2>
-        <ul>
-            <li><strong>Sign Up/Log In:</strong> Create an account and register your car with your ADMU Car Pass ID.</li>
-            <li><strong>Enter Parking:</strong> Use your current location to find the nearest parking zones and see real-time availability.</li>
-            <li><strong>Exit Parking:</strong> Log your exit to update slot availability and earn reward points.</li>
-            <li><strong>Dashboard:</strong> View historical data and peak hour predictions to plan your parking.</li>
-        </ul>
+    <section class="cta py-5 text-center">
+        <div class="container">
+            <h2 class="fw-bold mb-3">Ready to get started?</h2>
+            <p class="lead mb-4">Join hundreds of students and faculty using BluePark. </p>
+        </div>
     </section>
-
-    <section class="faqs">
-        <h2>FAQs & Helpdesk</h2>
-        <h3>Q: How accurate is the parking availability?</h3>
-        <p>A: Our system updates availability in real-time using data from entry/exit logs. While highly accurate, minor delays might occur.</p>
-        <h3>Q: What if I overstay my parking?</h3>
-        <p>A: Overstaying may result in penalty points on your account. Please check the specific parking rules for each zone.</p>
-        </section>
-
-    <section class="contact-support">
-        <h2>Contact Support</h2>
-        <p>If you need assistance, please email us at <a href="mailto:support@atenoparking.com">support@atenoparking.com</a> or call (02) 8123-4567.</p>
-    </section>
+</div>
 {% endblock %}
