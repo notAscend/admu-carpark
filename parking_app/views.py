@@ -265,25 +265,13 @@ def parking_zones_api_view(request):
 
 @login_required
 def dashboard_view(request):
-    # Map day numbers to day names
-    weekday_names = {
-        0: 'Monday', 1: 'Tuesday', 2: 'Wednesday', 3: 'Thursday', 
-        4: 'Friday', 5: 'Saturday', 6: 'Sunday'
-    }
-
-    # Aggregate data by the hour and day of the week
-    historical_data = ParkingHistory.objects.extra(
-        select={
-            'hour': 'CAST(strftime("%%H", timestamp) AS INT)',
-            'weekday': 'CAST(strftime("%%w", timestamp) AS INT)'
-        }
-    ).values('hour', 'weekday').annotate(
-        average_slots=Avg('slots_occupied')
-    ).order_by('weekday', 'hour')
+    # Fetch all parking sessions for the logged-in user, ordered by most recent
+    parking_sessions = ParkingSession.objects.filter(
+        user=request.user
+    ).order_by('-start_time')
 
     context = {
-        'historical_data': list(historical_data),
-        'weekday_names': weekday_names,
+        'parking_sessions': parking_sessions,
+        # You can add other context data here, like historical data predictions
     }
-    
     return render(request, 'parking_app/dashboard.html', context)

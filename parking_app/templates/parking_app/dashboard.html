@@ -1,0 +1,22 @@
+<h1>Dashboard</h1>
+
+<h2>Parking History</h2>
+
+{% if parking_sessions %}
+    <ul>
+        {% for session in parking_sessions %}
+            <li>
+                <strong>Parking Zone:</strong> {{ session.parking_zone.area }}<br>
+                <strong>Car Plate:</strong> {{ session.car.plate_number }}<br>
+                <strong>Start Time:</strong> {{ session.start_time|date:"F d, Y, P" }}<br>
+                {% if session.end_time %}
+                    <strong>End Time:</strong> {{ session.end_time|date:"F d, Y, P" }}
+                {% else %}
+                    <strong>Status:</strong> Currently Active
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>You have no past parking sessions to display.</p>
+{% endif %}
