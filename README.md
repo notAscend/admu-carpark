@@ -1,27 +1,22 @@
-# Ateneo Parking System
-
-A web-based parking management system for Ateneo de Manila University. This application helps students manage their vehicle registrations and track their active parking sessions on campus.
+# 🚗 BluePark - ADMU Parking System
+A web-based parking management system designed for Ateneo de Manila University. This application provides a streamlined way for students to register their vehicles and manage their parking sessions across campus.
 
 ## ✨ Features
+* **Secure User Authentication:** Students can register and log in using their Ateneo Student ID, with a secure, email-validated authentication process.
+* **Real-Time Parking Management** Start and end parking sessions from a user-friendly dashboard that provides live updates on your current session.
+* **Live Parking Sessions:** A dynamic counter shows exactly how long your vehicle has been parked, giving you real-time visibility.
+* **Vehicle Registration:** A simple, intuitive form lets users register their vehicles and generate a unique car pass number.
 
-* **User Authentication:** Secure user registration and login with Ateneo Student ID and email validation.
-* **Parking Zone Management:** Admins can define and manage various parking zones on campus.
-* **Live Parking Sessions:** Users can start and end parking sessions in a designated zone.
-* **Real-time Duration Tracker:** A live counter on the user's dashboard shows how long they have been parked.
-
-## 🛠️ Technologies Used
-
+## 🛠️ Technologies 
 * **Backend:** Python, Django
-* **Database:** SQLite (default)
-* **Frontend:** HTML5, Bootstrap 5, Vanilla JavaScript
+* * **Frontend:** HTML5, Bootstrap 5, Vanilla JavaScript
+* **Database:** SQLite 
 * **Development:** Git, GitHub
 
 ## 🚀 Getting Started
-
-Follow these steps to set up the project locally.
+Follow these simple steps to get the project running on your local machine.
 
 ### Prerequisites
-
 * Python 3.8+
 * pip
 
@@ -41,35 +36,31 @@ Follow these steps to set up the project locally.
 
 3.  **Install dependencies:**
     ```bash
-    pip install Django
+    pip install -r requirements.txt
     ```
-    (Note: It's recommended to create a `requirements.txt` file and install from there.)
 
-4.  **Run database migrations:**
+4.  **Set up the database:**
     ```bash
     python manage.py makemigrations
     python manage.py migrate
-    ```
-5.  **Load the initial data:**
-    ```bash
     python manage.py loaddata parking_zones.json
     ```
     
-6.  **Create an admin user:**
+5.  **Create an admin user:**
     ```bash
     python manage.py createsuperuser
     ```
 
-7.  **Run the development server:**
+6.  **Run the development server:**
     ```bash
     python manage.py runserver
     ```
 
-The application will now be running on `http://127.0.0.1:8000/`.
+The application will now be live at `http://127.0.0.1:8000/`.
 
-## 📌 Usage
+## 📌 How to Use
 
-* Navigate to the login/registration page to create an account using your Ateneo Student ID and email.
-* Once logged in, go to the "My Account" page to register a car pass.
-* If you have an active parking session, the page will show your current parking details and a live timer.
-* You can use the "Enter Parking System" button to start a new session or the "Exit Parking" button to end it.
+* **Register:** Navigate to the registration page and sign up using your Ateneo Student ID and email.
+* **Register a Vehicle:** Log in and go to "My Account" to register your car. This generates a unique car pass number you can use for parking.
+* **Start a Session:** Click "Enter Parking System," choose an available parking zone, and begin your session. The dashboard will show a live timer for your parking duration.
+* **End a Session:** When you're ready to leave, simply use the "Exit Parking" button on your dashboard to end your session.
