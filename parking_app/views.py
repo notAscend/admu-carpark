@@ -83,7 +83,6 @@ def logout_view(request):
     logout(request)
     return redirect('main')
 
-#-------- GOOD UNTIL HERE--------
 
 @login_required
 def account_view(request):
