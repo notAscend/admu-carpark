@@ -9,12 +9,14 @@ from django.utils import timezone
 import math
 import json
 from django.conf import settings
-from .forms import SignUpForm, CarDetailsForm, LoginForm, ParkingZoneForm
+from .forms import SignUpForm, CarDetailsForm, LoginForm, ParkingZoneForm, CarPassForm
+from datetime import datetime
 from .models import CustomUser, CarPass, ParkingZone, ParkingSession, ParkingZone
 from django.db.models import Avg
 from django.utils import timezone
 from datetime import timedelta
 from collections import defaultdict
+import random
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     """
@@ -354,3 +356,77 @@ def get_busyness_data(request):
         }
 
     return JsonResponse(data)
+
+@login_required
+def car_pass_signup(request):
+    car_count = request.user.car_passes.count()
+
+    if car_count >= 3:
+        messages.warning(request, "You have reached the maximum limit of 3 registered car passes.")
+        return redirect('account')
+
+    if request.method == 'POST':
+        form = CarPassForm(request.POST)
+        if form.is_valid():
+            # Get data from the form's cleaned_data
+            plate_number = form.cleaned_data['plate_number']
+
+            # Determine the car brand based on the user's selection
+            car_brand_choice = form.cleaned_data['car_brand']
+            if car_brand_choice == 'Other':
+                car_brand = form.cleaned_data['other_brand_text']
+            else:
+                car_brand = car_brand_choice
+
+            # Determine the car type based on the user's selection
+            car_type_choice = form.cleaned_data['car_type']
+            if car_type_choice == 'Other':
+                car_type = form.cleaned_data['other_type_text']
+            else:
+                car_type = car_type_choice
+
+            # Generate a unique car pass number
+            while True:
+                car_pass_number = f'{random.randint(100000, 999999)}'
+                if not CarPass.objects.filter(car_pass_number=car_pass_number).exists():
+                    break
+
+            # Manually create and save the CarPass object
+            car_pass = CarPass(
+                user=request.user,
+                plate_number=plate_number,
+                car_brand=car_brand,
+                car_type=car_type,
+                car_pass_number=car_pass_number
+            )
+            car_pass.save()
+
+            messages.success(request, "Car pass registered successfully!")
+            return redirect('account')
+    else:
+        form = CarPassForm()
+
+    return render(request, 'parking_app/car_pass_signup.html', {'form': form})
+
+@login_required
+def delete_car_pass(request, car_pass_id):
+    car_pass = get_object_or_404(CarPass, id=car_pass_id)
+
+    # Security Check: Ensure the car pass belongs to the logged-in user
+    if car_pass.user != request.user:
+        messages.error(request, "You do not have permission to delete this car pass.")
+        return redirect('account')
+    
+    # Optional: Check if the car is currently in an active parking session
+    if ParkingSession.objects.filter(car=car_pass, end_time__isnull=True).exists():
+        messages.error(request, "Cannot delete this car pass. It has an active parking session.")
+        return redirect('account')
+
+    if request.method == 'POST':
+        car_pass.delete()
+        messages.success(request, f"Car pass for {car_pass.plate_number} has been successfully deleted.")
+        return redirect('account')
+    
+    # If the request is not a POST, show a confirmation page or redirect
+    # For simplicity, we'll just redirect and assume the button is a POST form.
+    return redirect('account')

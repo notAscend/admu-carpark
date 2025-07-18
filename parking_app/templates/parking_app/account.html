@@ -22,24 +22,32 @@
                 <div class="card-body">
                     <h3 class="card-title mb-3">Your Profile</h3>
                     <p><strong>Email:</strong> {{ user.email }}</p>
-
                     <h4 class="mt-4">My Registered Cars</h4>
                     {% if user_car_passes %}
-                        <ul class="list-group list-group-flush">
-                            {% for car_pass in user_car_passes %}
-                                <li class="list-group-item">
-                                    <div>
-                                        <strong>Plate Number:</strong> {{ car_pass.plate_number }}
-                                        <span class="badge bg-primary float-end">{{ car_pass.car_pass_number }}</span>
-                                    </div>
-                                    <small class="text-muted">{{ car_pass.car_brand }} - {{ car_pass.car_type }}</small>
-                                </li>
-                            {% endfor %}
-                        </ul>
+                    <ul class="list-group list-group-flush">
+                        {% for car_pass in user_car_passes %}
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>Plate Number:</strong> {{ car_pass.plate_number }}
+                                    <small class="d-block text-muted">{{ car_pass.car_brand }} - {{ car_pass.car_type }}</small>
+                                </div>
+                                <div class="ms-3 text-end">
+                                    <span class="badge bg-primary rounded-pill d-block mb-1">{{ car_pass.car_pass_number }}</span>
+                                    
+                                    <form method="post" action="{% url 'delete_car_pass' car_pass.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger mt-1">Delete</button>
+                                    </form>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
                     {% else %}
-                        <p class="text-muted">You have no registered car passes. Kindly sign up for one.</p>
-                        <a href="#" class="btn btn-sm btn-outline-primary mt-2">Sign Up for a Car Pass</a>
+                        <p class="text-muted">You have no registered car passes.</p>
                     {% endif %}
+                    {% if request.user.car_passes.count < 3 %}
+                        <a href="{% url 'car_pass_signup' %}" class="btn btn-sm btn-outline-primary mt-2">Register for a car pass</a>
+                     {% endif %}
                 </div>
             </section>
         </div>

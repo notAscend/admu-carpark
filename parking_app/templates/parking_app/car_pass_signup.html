@@ -1,0 +1,102 @@
+{% extends 'parking_app/base.html' %}
+{% load static %}
+
+{% block title %}Register Car Pass{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-4">
+                    <h1 class="card-title text-center mb-4">Register Car Pass</h1>
+                    <p class="text-center text-muted mb-4">
+                        Fill out the form below to register your vehicle. A unique 6-digit car pass number will be automatically generated for you.
+                    </p>
+                    <form method="post" action="{% url 'car_pass_signup' %}">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_plate_number" class="form-label">Plate Number:</label>
+                            {{ form.plate_number }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_car_brand" class="form-label">Car Brand:</label>
+                            {{ form.car_brand }}
+                        </div>
+                        
+                        <div class="mb-3" id="other_brand_container" style="display: none;">
+                            <label for="id_other_brand_text" class="form-label">Specify Car Brand:</label>
+                            {{ form.other_brand_text }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_car_type" class="form-label">Car Type:</label>
+                            {{ form.car_type }}
+                        </div>
+                        
+                        <div class="mb-3" id="other_type_container" style="display: none;">
+                            <label for="id_other_type_text" class="form-label">Specify Car Type:</label>
+                            {{ form.other_type_text }}
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Submit Registration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const brandSelect = document.getElementById('id_car_brand');
+        const otherBrandContainer = document.getElementById('other_brand_container');
+        
+        const typeSelect = document.getElementById('id_car_type');
+        const otherTypeContainer = document.getElementById('other_type_container');
+
+        function toggleOtherFields(selectElement, containerElement) {
+            if (selectElement.value === 'Other') {
+                containerElement.style.display = 'block';
+            } else {
+                containerElement.style.display = 'none';
+            }
+        }
+
+        // Initial check on page load
+        if (brandSelect) {
+            toggleOtherFields(brandSelect, otherBrandContainer);
+        }
+        if (typeSelect) {
+            toggleOtherFields(typeSelect, otherTypeContainer);
+        }
+
+        // Add event listeners for changes
+        if (brandSelect) {
+            brandSelect.addEventListener('change', () => {
+                toggleOtherFields(brandSelect, otherBrandContainer);
+            });
+        }
+        if (typeSelect) {
+            typeSelect.addEventListener('change', () => {
+                toggleOtherFields(typeSelect, otherTypeContainer);
+            });
+        }
+    });
+</script>
+{% endblock %}

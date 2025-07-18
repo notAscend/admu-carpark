@@ -10,6 +10,8 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('account/', views.account_view, name='account'),
+    path('car-pass/signup/', views.car_pass_signup, name='car_pass_signup'),
+    path('car-pass/delete/<int:car_pass_id>/', views.delete_car_pass, name='delete_car_pass'),
 
     # Dashboard page
     path('dashboard/', views.dashboard_view, name='dashboard'),
