@@ -61,6 +61,14 @@ The application will now be live at `http://127.0.0.1:8000/`.
 ## 📌 How to Use
 
 * **Register:** Navigate to the registration page and sign up using your Ateneo Student ID and email.
+<img width="1141" height="721" alt="Screenshot 2025-07-18 at 10 28 37 AM" src="https://github.com/user-attachments/assets/400d8e1b-f450-44cb-acef-3e7815402814" />
+
 * **Register a Vehicle:** Log in and go to "My Account" to register your car. This generates a unique car pass number you can use for parking.
+<img width="439" height="485" alt="Screenshot 2025-07-18 at 10 29 06 AM" src="https://github.com/user-attachments/assets/87f81cbe-829f-4bd7-9d1a-c411d0f8c1f3" />
+<img width="1141" height="389" alt="Screenshot 2025-07-18 at 10 29 22 AM" src="https://github.com/user-attachments/assets/8f34a35c-7abc-448f-baac-25f8826e946a" />
+
 * **Start a Session:** Click "Enter Parking System," choose an available parking zone, and begin your session. The dashboard will show a live timer for your parking duration.
+<img width="1143" height="602" alt="Screenshot 2025-07-18 at 10 30 19 AM" src="https://github.com/user-attachments/assets/671008b2-3dd4-4835-af00-ea8b7321eb90" />
+
 * **End a Session:** When you're ready to leave, simply use the "Exit Parking" button on your dashboard to end your session.
+<img width="639" height="231" alt="Screenshot 2025-07-18 at 10 30 41 AM" src="https://github.com/user-attachments/assets/640d3870-ff2e-421e-a869-ff1bec4d947e" />
