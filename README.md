@@ -50,13 +50,17 @@ Follow these steps to set up the project locally.
     python manage.py makemigrations
     python manage.py migrate
     ```
-
-5.  **Create an admin user:**
+5.  **Load the initial data:**
+    ```bash
+    python manage.py loaddata parking_zones.json
+    ```
+    
+6.  **Create an admin user:**
     ```bash
     python manage.py createsuperuser
     ```
 
-6.  **Run the development server:**
+7.  **Run the development server:**
     ```bash
     python manage.py runserver
     ```
