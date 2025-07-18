@@ -1,0 +1,50 @@
+[
+{
+  "model": "parking_app.parkingzone",
+  "pk": 1,
+  "fields": {
+    "area": "North Parking Lot",
+    "latitude": "14.640800",
+    "longitude": "121.077800",
+    "total_slots": 217,
+    "curr_slots": 0,
+    "zone_code": "ARETE"
+  }
+},
+{
+  "model": "parking_app.parkingzone",
+  "pk": 2,
+  "fields": {
+    "area": "JSEC Parking Lot",
+    "latitude": "14.637200",
+    "longitude": "121.076200",
+    "total_slots": 147,
+    "curr_slots": 1,
+    "zone_code": "JSEC"
+  }
+},
+{
+  "model": "parking_app.parkingzone",
+  "pk": 3,
+  "fields": {
+    "area": "Upper East Parking Lot",
+    "latitude": "14.637300",
+    "longitude": "121.078000",
+    "total_slots": 190,
+    "curr_slots": 0,
+    "zone_code": "UPPER_EAST"
+  }
+},
+{
+  "model": "parking_app.parkingzone",
+  "pk": 4,
+  "fields": {
+    "area": "Lower East Parking Lot",
+    "latitude": "14.637800",
+    "longitude": "121.078700",
+    "total_slots": 75,
+    "curr_slots": 0,
+    "zone_code": "LOWER_EAST"
+  }
+}
+]
